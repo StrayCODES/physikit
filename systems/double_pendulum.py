@@ -34,6 +34,10 @@ def simulate_double_pendulum(
     t_eval = np.arange(0, t_max, dt)
     y0 = [theta1, z1, theta2, z2]
 
+    # Input validation
+    if t_max <= 0 or dt <= 0:
+        return pd.DataFrame(columns=['time', 'theta1', 'theta2', 'z1', 'z2', 'x1', 'y1', 'x2', 'y2'])
+
     sol = solve_ivp(
         double_pendulum_ode,
         t_span,

@@ -13,6 +13,10 @@ def simulate_spring_mass(m=1.0, k=1.0,c=0.0, x0=1.0, v0=0.0, t_max=10, dt=0.01):
     t_eval = np.arange(0, t_max, dt)
     y0 = [x0, v0]
     
+    # Input validation
+    if t_max <= 0 or dt <= 0:
+        return pd.DataFrame(columns=['time', 'position', 'velocity', 'KE', 'PE', 'TE'])
+    
     sol = solve_ivp(
         spring_mass_ode,
         t_span,
