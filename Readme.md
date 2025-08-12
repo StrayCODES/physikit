@@ -1,12 +1,16 @@
+
 # PhysiKit
 
-PhysiKit is an interactive physics simulation toolkit built with Streamlit. The current version focuses on simulating the classic spring-mass system, allowing users to explore dynamics, energy, and damping effects visually and numerically.
+PhysiKit is an interactive, multi-page physics simulation toolkit built with Streamlit. It features a landing page and a dedicated simulation page, allowing users to explore classic and chaotic systems with scrollable, zoomable graphs and downloadable data.
 
 ## Features
-- **Spring-Mass System Simulation**: Adjust mass, spring constant, damping, initial position, and velocity.
-- **Interactive Plots**: Visualize position, velocity, and energy over time.
-- **Downloadable Data**: Export simulation results as CSV for further analysis.
-- **Extensible Structure**: Modular codebase for adding more physical systems and machine learning features.
+- **Multi-page Streamlit App**: Landing page (`Home.py`) and simulation page (`pages/Simulations.py`).
+- **Spring-Mass System**: Simulate oscillations, damping, and energy.
+- **Double Pendulum**: Explore chaos and sensitivity to initial conditions.
+- **Interactive Plots**: Infinite, scrollable, zoomable graphs powered by Plotly.
+- **Manual Parameter Entry**: No limits on simulation parameters; enter any value.
+- **Downloadable Data**: Export results as CSV for further analysis.
+- **Extensible Structure**: Easily add new systems and features.
 
 ## Installation
 1. Clone the repository:
@@ -20,26 +24,29 @@ PhysiKit is an interactive physics simulation toolkit built with Streamlit. The 
    ```
 
 ## Usage
-Run the Streamlit app:
+Run the multi-page Streamlit app:
 ```powershell
-streamlit run app.py
+streamlit run Home.py
 ```
-Adjust simulation parameters in the sidebar and explore the results interactively.
+Use the sidebar to navigate between the landing page and simulations. Adjust parameters, run simulations, and download results interactively.
 
 ## Project Structure
 ```
 physikit/
-├── app.py                # Main Streamlit application
-├── requirements.txt      # Python dependencies
-├── ml/                   # (Reserved) Machine learning utilities
-├── systems/              # Physical system models
-│   └── spring_mass.py    # Spring-mass system simulation
-├── utils/                # Utility functions (empty for now)
-└── Readme.md             # Project documentation
+├── Home.py                # Landing page (main entry)
+├── pages/
+│   └── Simulations.py     # Simulation page (multi-system)
+├── requirements.txt       # Python dependencies
+├── ml/                    # (Reserved) Machine learning utilities
+├── systems/               # Physical system models
+│   ├── spring_mass.py     # Spring-mass system simulation
+│   └── double_pendulum.py # Double pendulum simulation
+├── utils/                 # Utility functions (empty for now)
+└── Readme.md              # Project documentation
 ```
 
 ## Extending PhysiKit
-- Add new physical systems in the `systems/` directory.
+- Add new physical systems in the `systems/` directory and register them in `Simulations.py`.
 - Implement ML features in the `ml/` directory.
 - Contribute via pull requests and issues.
 
