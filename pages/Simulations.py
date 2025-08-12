@@ -133,10 +133,27 @@ SYSTEMS = {
     "Rigidbody Collisions": {
         "module": "systems.rigidbody_collisions",
         "simulate": "simulate_rigidbody_collisions",
-        "sidebar": lambda st: {
-            "restitution": st.sidebar.number_input("Restitution Coefficient", value=1.0, step=0.0001, format="%.4f")
-        },
-        "plot": lambda result, st: st.info("Rigidbody collisions plot coming soon!")
+        "sidebar": lambda st: (
+            lambda n, dim: {
+                "bodies": [
+                    {
+                        "pos": np.array([
+                            st.sidebar.number_input(f"x{i+1} (m)", value=2.0*i, step=0.0001, format="%.4f", key=f"rc_x_{i}"),
+                            st.sidebar.number_input(f"y{i+1} (m)", value=0.0, step=0.0001, format="%.4f", key=f"rc_y_{i}")
+                        ] + ([st.sidebar.number_input(f"z{i+1} (m)", value=0.0, step=0.0001, format="%.4f", key=f"rc_z_{i}")] if dim == 3 else [])),
+                        "vel": np.array([
+                            st.sidebar.number_input(f"vx{i+1} (m/s)", value=1.0 if i==0 else -1.0, step=0.0001, format="%.4f", key=f"rc_vx_{i}"),
+                            st.sidebar.number_input(f"vy{i+1} (m/s)", value=0.0, step=0.0001, format="%.4f", key=f"rc_vy_{i}")
+                        ] + ([st.sidebar.number_input(f"vz{i+1} (m/s)", value=0.0, step=0.0001, format="%.4f", key=f"rc_vz_{i}")] if dim == 3 else [])),
+                        "mass": st.sidebar.number_input(f"Mass {i+1} (kg)", value=1.0, step=0.0001, format="%.4f", key=f"rc_mass_{i}"),
+                        "radius": st.sidebar.number_input(f"Radius {i+1} (m)", value=0.5, step=0.0001, format="%.4f", key=f"rc_radius_{i}")
+                    }
+                    for i in range(n)
+                ],
+                "restitution": st.sidebar.number_input("Restitution Coefficient", value=1.0, step=0.0001, format="%.4f"),
+            }
+        )(st.sidebar.number_input("Number of Bodies", value=2, step=1, min_value=2, max_value=5), st.sidebar.radio("Collision Dimension", [2, 3], index=1, format_func=lambda x: f"{x}D")),
+        "plot": lambda result, st: plot_rigidbody_collisions(result, st)
     },
     "Rotational Dynamics": {
         "module": "systems.rotational_dynamics",
@@ -292,6 +309,97 @@ def plot_nbody(result, st):
         label="Download CSV",
         data=csv,
         file_name='nbody_simulation.csv',
+        mime='text/csv',
+    )
+
+def plot_rigidbody_collisions(result, st):
+    st.subheader("Rigidbody Collisions: Trajectories")
+    n = len([col for col in result.columns if col.startswith('x')])
+    dim = 3 if 'z1' in result.columns else 2
+    colors = ["#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A"]
+    line_styles = ['solid', 'dash', 'dot', 'dashdot', 'longdash']
+    if dim == 3:
+        fig = go.Figure()
+        for i in range(n):
+            fig.add_trace(go.Scatter3d(
+                x=result[f'x{i+1}'],
+                y=result[f'y{i+1}'],
+                z=result[f'z{i+1}'],
+                mode='lines+markers',
+                name=f'Body {i+1}',
+                line=dict(color=colors[i % len(colors)], width=4, dash=line_styles[i % len(line_styles)]),
+                marker=dict(size=6, color=colors[i % len(colors)], opacity=0.8),
+                opacity=0.7,
+                hovertemplate=f'Body {i+1}<br>X: %{{x}}<br>Y: %{{y}}<br>Z: %{{z}}'
+            ))
+        fig.update_layout(scene=dict(xaxis_title='X (m)', yaxis_title='Y (m)', zaxis_title='Z (m)'),
+                          title="3D Rigidbody Collisions", dragmode='turntable', legend=dict(x=0, y=1))
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        fig = go.Figure()
+        for i in range(n):
+            fig.add_trace(go.Scatter(
+                x=result[f'x{i+1}'],
+                y=result[f'y{i+1}'],
+                mode='lines+markers',
+                name=f'Body {i+1}',
+                line=dict(color=colors[i % len(colors)], width=4, dash=line_styles[i % len(line_styles)], shape='spline'),
+                marker=dict(size=8, color=colors[i % len(colors)], opacity=0.8),
+                opacity=0.7,
+                hovertemplate=f'Body {i+1}<br>X: %{{x}}<br>Y: %{{y}}'
+            ))
+        fig.update_layout(xaxis_title='X (m)', yaxis_title='Y (m)', title="2D Rigidbody Collisions",
+                          dragmode='pan', legend=dict(x=0, y=1))
+        st.plotly_chart(fig, use_container_width=True)
+
+    if st.checkbox("Show velocity magnitude vs time for each body"):
+        st.subheader("Velocity Magnitude vs Time")
+        fig2 = go.Figure()
+        for i in range(n):
+            if dim == 3:
+                speed = np.sqrt(result[f'vx{i+1}']**2 + result[f'vy{i+1}']**2 + result[f'vz{i+1}']**2)
+            else:
+                speed = np.sqrt(result[f'vx{i+1}']**2 + result[f'vy{i+1}']**2)
+            fig2.add_trace(go.Scatter(x=result['time'], y=speed, mode='lines', name=f'Body {i+1}',
+                                      line=dict(color=colors[i % len(colors)], width=3, dash=line_styles[i % len(line_styles)])))
+        fig2.update_layout(xaxis_title="Time (s)", yaxis_title="Speed (m/s)", title="Velocity Magnitude vs Time", dragmode='pan')
+        st.plotly_chart(fig2, use_container_width=True)
+
+    if st.checkbox("Show pairwise distance vs time"):
+        st.subheader("Pairwise Distance vs Time")
+        fig3 = go.Figure()
+        for i in range(n):
+            for j in range(i+1, n):
+                if dim == 3:
+                    dist = np.sqrt((result[f'x{i+1}'] - result[f'x{j+1}'])**2 + (result[f'y{i+1}'] - result[f'y{j+1}'])**2 + (result[f'z{i+1}'] - result[f'z{j+1}'])**2)
+                else:
+                    dist = np.sqrt((result[f'x{i+1}'] - result[f'x{j+1}'])**2 + (result[f'y{i+1}'] - result[f'y{j+1}'])**2)
+                fig3.add_trace(go.Scatter(x=result['time'], y=dist, mode='lines', name=f'Dist Body {i+1}-{j+1}',
+                                          line=dict(color=colors[(i+j) % len(colors)], width=2, dash='dot')))
+        fig3.update_layout(xaxis_title="Time (s)", yaxis_title="Distance (m)", title="Pairwise Distance vs Time", dragmode='pan')
+        st.plotly_chart(fig3, use_container_width=True)
+
+    if st.checkbox("Show kinetic energy vs time"):
+        st.subheader("Kinetic Energy vs Time")
+        fig4 = go.Figure()
+        for i in range(n):
+            if dim == 3:
+                speed = np.sqrt(result[f'vx{i+1}']**2 + result[f'vy{i+1}']**2 + result[f'vz{i+1}']**2)
+            else:
+                speed = np.sqrt(result[f'vx{i+1}']**2 + result[f'vy{i+1}']**2)
+            # Assume mass = 1 for all bodies (or fetch from sidebar if needed)
+            KE = 0.5 * speed**2
+            fig4.add_trace(go.Scatter(x=result['time'], y=KE, mode='lines', name=f'Body {i+1}',
+                                      line=dict(color=colors[i % len(colors)], width=3, dash=line_styles[i % len(line_styles)])))
+        fig4.update_layout(xaxis_title="Time (s)", yaxis_title="Kinetic Energy (J)", title="Kinetic Energy vs Time", dragmode='pan')
+        st.plotly_chart(fig4, use_container_width=True)
+
+    st.subheader("Download Simulation Data")
+    csv = result.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="Download CSV",
+        data=csv,
+        file_name='rigidbody_collisions_simulation.csv',
         mime='text/csv',
     )
 
