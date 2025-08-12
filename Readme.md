@@ -22,7 +22,7 @@ PhysiKit is an interactive physics simulation toolkit built with Streamlit. The 
 ## Usage
 Run the Streamlit app:
 ```powershell
-streamlit run app.py
+streamlit run Home.py
 ```
 Adjust simulation parameters in the sidebar and explore the results interactively.
 
